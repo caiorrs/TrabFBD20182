@@ -4,4 +4,4 @@ Trabalho para a cadeira de Fundamentos de Banco de Dados 2018/2
 ## Ferramentas
 
 IDE - Pycharm
-ER - dbMain
+ER - brModelo
