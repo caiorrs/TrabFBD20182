@@ -1,0 +1,674 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 10.6 (Ubuntu 10.6-1.pgdg18.04+1)
+-- Dumped by pg_dump version 10.6 (Ubuntu 10.6-1.pgdg18.04+1)
+
+-- Started on 2018-12-02 01:39:45 -02
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- TOC entry 1 (class 3079 OID 13043)
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- TOC entry 3046 (class 0 OID 0)
+-- Dependencies: 1
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- TOC entry 208 (class 1259 OID 33558)
+-- Name: contrato; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.contrato (
+    id_contrato integer NOT NULL,
+    cliente integer NOT NULL,
+    fiador integer NOT NULL,
+    proprietario integer NOT NULL
+);
+
+
+ALTER TABLE public.contrato OWNER TO postgres;
+
+--
+-- TOC entry 210 (class 1259 OID 33587)
+-- Name: aluguel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.aluguel (
+    id_aluguel integer NOT NULL,
+    preco_aluguel numeric NOT NULL,
+    taxas_administrativas numeric NOT NULL,
+    ganho_proprietario_aluguel numeric NOT NULL
+)
+INHERITS (public.contrato);
+
+
+ALTER TABLE public.aluguel OWNER TO postgres;
+
+--
+-- TOC entry 203 (class 1259 OID 33500)
+-- Name: imovel; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.imovel (
+    id_imovel character(12) NOT NULL,
+    proprietario integer NOT NULL,
+    area numeric NOT NULL,
+    bairro integer NOT NULL,
+    preco_venda numeric,
+    preco_aluguel numeric,
+    iptu numeric NOT NULL,
+    observacoes character varying(1000),
+    disponivel boolean NOT NULL,
+    cidade integer NOT NULL,
+    rua character varying(150) NOT NULL,
+    CONSTRAINT sem_aluguel_e_venda CHECK (((preco_aluguel IS NOT NULL) OR (preco_venda IS NOT NULL)))
+);
+
+
+ALTER TABLE public.imovel OWNER TO postgres;
+
+--
+-- TOC entry 204 (class 1259 OID 33519)
+-- Name: construcao; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.construcao (
+    id_construcao integer NOT NULL,
+    num_comodos integer NOT NULL,
+    numero_rua integer,
+    CONSTRAINT pelo_menos_um_comodo CHECK ((num_comodos > 0))
+)
+INHERITS (public.imovel);
+
+
+ALTER TABLE public.construcao OWNER TO postgres;
+
+--
+-- TOC entry 207 (class 1259 OID 33548)
+-- Name: apartamento; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.apartamento (
+    id_apartamento integer NOT NULL,
+    andar integer NOT NULL,
+    gas_central boolean NOT NULL,
+    vagas_garagem integer NOT NULL,
+    num_elevadores integer NOT NULL,
+    complemento character varying(6) NOT NULL
+)
+INHERITS (public.construcao);
+
+
+ALTER TABLE public.apartamento OWNER TO postgres;
+
+--
+-- TOC entry 202 (class 1259 OID 33487)
+-- Name: bairro; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.bairro (
+    id_bairro integer NOT NULL,
+    nome character(100) NOT NULL,
+    cidade integer NOT NULL,
+    valor_m2 numeric NOT NULL
+);
+
+
+ALTER TABLE public.bairro OWNER TO postgres;
+
+--
+-- TOC entry 206 (class 1259 OID 33538)
+-- Name: casa; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.casa (
+    id_casa integer NOT NULL,
+    num_andares integer NOT NULL,
+    descricao character varying(1000) NOT NULL
+)
+INHERITS (public.construcao);
+
+
+ALTER TABLE public.casa OWNER TO postgres;
+
+--
+-- TOC entry 201 (class 1259 OID 33482)
+-- Name: cidade; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.cidade (
+    id_cidade integer NOT NULL,
+    nome character varying(100) NOT NULL,
+    uf character(2) NOT NULL
+);
+
+
+ALTER TABLE public.cidade OWNER TO postgres;
+
+--
+-- TOC entry 199 (class 1259 OID 33451)
+-- Name: cliente; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.cliente (
+    id_cliente integer NOT NULL,
+    "RG_cliente" character(14) NOT NULL,
+    renda numeric,
+    fiador integer
+);
+
+
+ALTER TABLE public.cliente OWNER TO postgres;
+
+--
+-- TOC entry 209 (class 1259 OID 33578)
+-- Name: contrato_compra; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.contrato_compra (
+    id_compra integer NOT NULL,
+    preco numeric NOT NULL,
+    numero_parcelas integer NOT NULL,
+    desconto_menos_10_parcelas numeric,
+    ganho_proprietario numeric NOT NULL
+)
+INHERITS (public.contrato);
+
+
+ALTER TABLE public.contrato_compra OWNER TO postgres;
+
+--
+-- TOC entry 198 (class 1259 OID 33438)
+-- Name: fiador; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.fiador (
+    id_fiador integer NOT NULL,
+    "RG_fiador" character(14) NOT NULL,
+    valor_bens numeric NOT NULL
+);
+
+
+ALTER TABLE public.fiador OWNER TO postgres;
+
+--
+-- TOC entry 200 (class 1259 OID 33469)
+-- Name: imoveis_fiador; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.imoveis_fiador (
+    id_imovel_fiador integer NOT NULL,
+    id_fiador integer NOT NULL,
+    valor_imovel numeric NOT NULL,
+    escritura character varying(300) NOT NULL
+);
+
+
+ALTER TABLE public.imoveis_fiador OWNER TO postgres;
+
+--
+-- TOC entry 196 (class 1259 OID 33419)
+-- Name: pessoa; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.pessoa (
+    "RG" character(14) NOT NULL,
+    nome character varying(100) NOT NULL,
+    nome_pai character varying(100),
+    nome_mae character varying(100)
+);
+
+
+ALTER TABLE public.pessoa OWNER TO postgres;
+
+--
+-- TOC entry 197 (class 1259 OID 33428)
+-- Name: proprietario; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.proprietario (
+    id_proprietario integer NOT NULL,
+    "RG_proprietario" character(14)
+);
+
+
+ALTER TABLE public.proprietario OWNER TO postgres;
+
+--
+-- TOC entry 205 (class 1259 OID 33529)
+-- Name: terreno; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.terreno (
+    id_terreno integer NOT NULL,
+    esquina boolean NOT NULL
+)
+INHERITS (public.imovel);
+
+
+ALTER TABLE public.terreno OWNER TO postgres;
+
+--
+-- TOC entry 3038 (class 0 OID 33587)
+-- Dependencies: 210
+-- Data for Name: aluguel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.aluguel (id_contrato, cliente, fiador, proprietario, id_aluguel, preco_aluguel, taxas_administrativas, ganho_proprietario_aluguel) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3035 (class 0 OID 33548)
+-- Dependencies: 207
+-- Data for Name: apartamento; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.apartamento (id_imovel, proprietario, area, bairro, preco_venda, preco_aluguel, iptu, observacoes, disponivel, cidade, rua, id_construcao, num_comodos, numero_rua, id_apartamento, andar, gas_central, vagas_garagem, num_elevadores, complemento) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3030 (class 0 OID 33487)
+-- Dependencies: 202
+-- Data for Name: bairro; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.bairro (id_bairro, nome, cidade, valor_m2) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3034 (class 0 OID 33538)
+-- Dependencies: 206
+-- Data for Name: casa; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.casa (id_imovel, proprietario, area, bairro, preco_venda, preco_aluguel, iptu, observacoes, disponivel, cidade, rua, id_construcao, num_comodos, numero_rua, id_casa, num_andares, descricao) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3029 (class 0 OID 33482)
+-- Dependencies: 201
+-- Data for Name: cidade; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.cidade (id_cidade, nome, uf) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3027 (class 0 OID 33451)
+-- Dependencies: 199
+-- Data for Name: cliente; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.cliente (id_cliente, "RG_cliente", renda, fiador) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3032 (class 0 OID 33519)
+-- Dependencies: 204
+-- Data for Name: construcao; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.construcao (id_imovel, proprietario, area, bairro, preco_venda, preco_aluguel, iptu, observacoes, disponivel, cidade, rua, id_construcao, num_comodos, numero_rua) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3036 (class 0 OID 33558)
+-- Dependencies: 208
+-- Data for Name: contrato; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.contrato (id_contrato, cliente, fiador, proprietario) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3037 (class 0 OID 33578)
+-- Dependencies: 209
+-- Data for Name: contrato_compra; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.contrato_compra (id_contrato, cliente, fiador, proprietario, id_compra, preco, numero_parcelas, desconto_menos_10_parcelas, ganho_proprietario) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3026 (class 0 OID 33438)
+-- Dependencies: 198
+-- Data for Name: fiador; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.fiador (id_fiador, "RG_fiador", valor_bens) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3028 (class 0 OID 33469)
+-- Dependencies: 200
+-- Data for Name: imoveis_fiador; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.imoveis_fiador (id_imovel_fiador, id_fiador, valor_imovel, escritura) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3031 (class 0 OID 33500)
+-- Dependencies: 203
+-- Data for Name: imovel; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.imovel (id_imovel, proprietario, area, bairro, preco_venda, preco_aluguel, iptu, observacoes, disponivel, cidade, rua) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3024 (class 0 OID 33419)
+-- Dependencies: 196
+-- Data for Name: pessoa; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.pessoa ("RG", nome, nome_pai, nome_mae) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3025 (class 0 OID 33428)
+-- Dependencies: 197
+-- Data for Name: proprietario; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.proprietario (id_proprietario, "RG_proprietario") FROM stdin;
+\.
+
+
+--
+-- TOC entry 3033 (class 0 OID 33529)
+-- Dependencies: 205
+-- Data for Name: terreno; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.terreno (id_imovel, proprietario, area, bairro, preco_venda, preco_aluguel, iptu, observacoes, disponivel, cidade, rua, id_terreno, esquina) FROM stdin;
+\.
+
+
+--
+-- TOC entry 2863 (class 2606 OID 33424)
+-- Name: pessoa PESSOA_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.pessoa
+    ADD CONSTRAINT "PESSOA_pkey" PRIMARY KEY ("RG");
+
+
+--
+-- TOC entry 2891 (class 2606 OID 33594)
+-- Name: aluguel aluguel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.aluguel
+    ADD CONSTRAINT aluguel_pkey PRIMARY KEY (id_aluguel);
+
+
+--
+-- TOC entry 2885 (class 2606 OID 33557)
+-- Name: apartamento apartamento_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.apartamento
+    ADD CONSTRAINT apartamento_pkey PRIMARY KEY (id_apartamento);
+
+
+--
+-- TOC entry 2875 (class 2606 OID 33494)
+-- Name: bairro bairro_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bairro
+    ADD CONSTRAINT bairro_pkey PRIMARY KEY (id_bairro);
+
+
+--
+-- TOC entry 2883 (class 2606 OID 33547)
+-- Name: casa casa_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.casa
+    ADD CONSTRAINT casa_pkey PRIMARY KEY (id_casa);
+
+
+--
+-- TOC entry 2873 (class 2606 OID 33486)
+-- Name: cidade cidade_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cidade
+    ADD CONSTRAINT cidade_pkey PRIMARY KEY (id_cidade);
+
+
+--
+-- TOC entry 2869 (class 2606 OID 33458)
+-- Name: cliente cliente2_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cliente
+    ADD CONSTRAINT cliente2_pkey PRIMARY KEY (id_cliente);
+
+
+--
+-- TOC entry 2867 (class 2606 OID 33445)
+-- Name: fiador cliente_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fiador
+    ADD CONSTRAINT cliente_pkey PRIMARY KEY (id_fiador);
+
+
+--
+-- TOC entry 2879 (class 2606 OID 33528)
+-- Name: construcao construcao_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.construcao
+    ADD CONSTRAINT construcao_pkey PRIMARY KEY (id_construcao);
+
+
+--
+-- TOC entry 2889 (class 2606 OID 33585)
+-- Name: contrato_compra contrato_compra_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrato_compra
+    ADD CONSTRAINT contrato_compra_pkey PRIMARY KEY (id_compra);
+
+
+--
+-- TOC entry 2887 (class 2606 OID 33562)
+-- Name: contrato contrato_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrato
+    ADD CONSTRAINT contrato_pkey PRIMARY KEY (id_contrato);
+
+
+--
+-- TOC entry 2871 (class 2606 OID 33476)
+-- Name: imoveis_fiador imoveis_fiador_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.imoveis_fiador
+    ADD CONSTRAINT imoveis_fiador_pkey PRIMARY KEY (id_imovel_fiador);
+
+
+--
+-- TOC entry 2877 (class 2606 OID 33508)
+-- Name: imovel imovel_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.imovel
+    ADD CONSTRAINT imovel_pkey PRIMARY KEY (id_imovel);
+
+
+--
+-- TOC entry 2853 (class 2606 OID 33427)
+-- Name: pessoa pais_nulos; Type: CHECK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.pessoa
+    ADD CONSTRAINT pais_nulos CHECK (((nome_pai IS NOT NULL) OR (nome_mae IS NOT NULL))) NOT VALID;
+
+
+--
+-- TOC entry 2865 (class 2606 OID 33432)
+-- Name: proprietario proprietario_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.proprietario
+    ADD CONSTRAINT proprietario_pkey PRIMARY KEY (id_proprietario);
+
+
+--
+-- TOC entry 2881 (class 2606 OID 33537)
+-- Name: terreno terreno_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.terreno
+    ADD CONSTRAINT terreno_pkey PRIMARY KEY (id_terreno);
+
+
+--
+-- TOC entry 2897 (class 2606 OID 33495)
+-- Name: bairro FK_cidade; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.bairro
+    ADD CONSTRAINT "FK_cidade" FOREIGN KEY (cidade) REFERENCES public.cidade(id_cidade);
+
+
+--
+-- TOC entry 2892 (class 2606 OID 33433)
+-- Name: proprietario FK_pessoa_proprietario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.proprietario
+    ADD CONSTRAINT "FK_pessoa_proprietario" FOREIGN KEY ("RG_proprietario") REFERENCES public.pessoa("RG") ON UPDATE RESTRICT ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 2894 (class 2606 OID 33459)
+-- Name: cliente RG_cliente_pessoa; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cliente
+    ADD CONSTRAINT "RG_cliente_pessoa" FOREIGN KEY ("RG_cliente") REFERENCES public.pessoa("RG");
+
+
+--
+-- TOC entry 2898 (class 2606 OID 33509)
+-- Name: imovel bairro; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.imovel
+    ADD CONSTRAINT bairro FOREIGN KEY (bairro) REFERENCES public.bairro(id_bairro);
+
+
+--
+-- TOC entry 2899 (class 2606 OID 33514)
+-- Name: imovel cidade; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.imovel
+    ADD CONSTRAINT cidade FOREIGN KEY (cidade) REFERENCES public.cidade(id_cidade);
+
+
+--
+-- TOC entry 2900 (class 2606 OID 33563)
+-- Name: contrato cliente; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrato
+    ADD CONSTRAINT cliente FOREIGN KEY (cliente) REFERENCES public.cliente(id_cliente);
+
+
+--
+-- TOC entry 2901 (class 2606 OID 33568)
+-- Name: contrato fiador; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrato
+    ADD CONSTRAINT fiador FOREIGN KEY (fiador) REFERENCES public.fiador(id_fiador);
+
+
+--
+-- TOC entry 2895 (class 2606 OID 33464)
+-- Name: cliente fiador_fiador; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.cliente
+    ADD CONSTRAINT fiador_fiador FOREIGN KEY (fiador) REFERENCES public.fiador(id_fiador);
+
+
+--
+-- TOC entry 2896 (class 2606 OID 33477)
+-- Name: imoveis_fiador imovel_fiador; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.imoveis_fiador
+    ADD CONSTRAINT imovel_fiador FOREIGN KEY (id_fiador) REFERENCES public.fiador(id_fiador);
+
+
+--
+-- TOC entry 2902 (class 2606 OID 33573)
+-- Name: contrato proprietario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.contrato
+    ADD CONSTRAINT proprietario FOREIGN KEY (proprietario) REFERENCES public.proprietario(id_proprietario);
+
+
+--
+-- TOC entry 2893 (class 2606 OID 33446)
+-- Name: fiador rg_fiador_pessoa; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.fiador
+    ADD CONSTRAINT rg_fiador_pessoa FOREIGN KEY ("RG_fiador") REFERENCES public.pessoa("RG");
+
+
+-- Completed on 2018-12-02 01:39:45 -02
+
+--
+-- PostgreSQL database dump complete
+--
+
